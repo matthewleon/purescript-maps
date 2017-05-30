@@ -267,7 +267,7 @@ filterKey predicate = fold step empty
   where
     step acc k v | predicate k = insert k v acc
     step acc _ _               =            acc
-             
+
 filterValue :: forall a. (a -> Boolean) -> StrMap a -> StrMap a
 filterValue predicate = fold step empty
   where
