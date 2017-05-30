@@ -39,7 +39,7 @@ instance arbSmallArray :: (Arbitrary v) => Arbitrary (SmallArray v) where
   arbitrary = SmallArray <$> Gen.resize 3 arbitrary
 
 instance arbTestIntMap :: Arbitrary TestIntMap where
-  arbitrary = TestIntMap <<< (M.fromFoldable :: List (Tuple String Int) -> M.StrMap Int) <$> arbitrary
+  arbitrary = TestIntMap <<< (M.fromFoldable :: L.List (Tuple String Int) -> M.StrMap Int) <$> arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
