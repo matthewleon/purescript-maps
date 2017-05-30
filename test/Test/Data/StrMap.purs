@@ -25,10 +25,6 @@ import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.QuickCheck.Gen as Gen
 
 newtype TestStrMap v = TestStrMap (M.StrMap v)
-newtype TestIntMap   = TestIntMap (M.StrMap Int)
-
-derive newtype instance showTestIntMap :: Show TestIntMap
-derive newtype instance eqTestIntMap   :: Eq   TestIntMap
 
 instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
   arbitrary = TestStrMap <<< (M.fromFoldable :: L.List (Tuple String v) -> M.StrMap v) <$> arbitrary
@@ -37,9 +33,6 @@ newtype SmallArray v = SmallArray (Array v)
 
 instance arbSmallArray :: (Arbitrary v) => Arbitrary (SmallArray v) where
   arbitrary = SmallArray <$> Gen.resize 3 arbitrary
-
-instance arbTestIntMap :: Arbitrary TestIntMap where
-  arbitrary = TestIntMap <<< (M.fromFoldable :: L.List (Tuple String Int) -> M.StrMap Int) <$> arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -121,16 +114,20 @@ strMapTests = do
   quickCheck $ \k v -> M.toUnfoldable (M.singleton k v :: M.StrMap Int) == L.singleton (Tuple k v)
 
   log "filterKeys gives submap"
-  quickCheck $ \(TestIntMap s) p -> M.isSubmap (M.filterKeys   p s) s
+  quickCheck $ \(TestStrMap (s :: M.StrMap Int)) p ->
+                 M.isSubmap (M.filterKeys p s) s
 
   log "filterKeys keeps those keys for which predicate is true"
-  quickCheck $ \(TestIntMap s) p -> A.all p (M.keys (M.filterKeys p s))
+  quickCheck $ \(TestStrMap (s :: M.StrMap Int)) p ->
+                 A.all p (M.keys (M.filterKeys p s))
 
   log "filterValues gives submap"
-  quickCheck $ \(TestIntMap s) p -> M.isSubmap (M.filterValues p s) s
+  quickCheck $ \(TestStrMap (s :: M.StrMap Int)) p ->
+                 M.isSubmap (M.filterValues p s) s
 
   log "filterValues keeps those values for which predicate is true"
-  quickCheck $ \(TestIntMap s) p -> A.all p (M.values (M.filterValues p s))
+  quickCheck $ \(TestStrMap (s :: M.StrMap Int)) p ->
+                 A.all p (M.values (M.filterValues p s))
 
   log "fromFoldable [] = empty"
   quickCheck (M.fromFoldable [] == (M.empty :: M.StrMap Unit)
