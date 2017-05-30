@@ -263,13 +263,23 @@ instance monoidStrMap :: (Semigroup a) => Monoid (StrMap a) where
   mempty = empty
 
 filterKeys :: forall a. (String -> Boolean) -> StrMap a -> StrMap a
-filterKeys predicate = fold step empty
+filterKeys predicate m = pureST go
   where
-    step acc k v | predicate k = insert k v acc
-    step acc _ _               =            acc
+  go :: forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)
+  go = do
+    m' <- SM.new
+    foldM step m' m
+
+    where
+    step acc k v = if predicate k then SM.poke acc k v else pure acc
 
 filterValues :: forall a. (a -> Boolean) -> StrMap a -> StrMap a
-filterValues predicate = fold step empty
+filterValues predicate m = pureST go
   where
-    step acc k v | predicate v = insert k v acc
-    step acc _ _               =            acc
+  go :: forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)
+  go = do
+    m' <- SM.new
+    foldM step m' m
+
+    where
+    step acc k v = if predicate v then SM.poke acc k v else pure acc
