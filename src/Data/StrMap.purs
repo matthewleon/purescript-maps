@@ -49,6 +49,7 @@ import Control.Monad.ST as ST
 import Data.Array as A
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr, for_)
+import Data.Foldable as F
 import Data.Function.Uncurried (Fn2, runFn2, Fn4, runFn4)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
@@ -204,10 +205,9 @@ update f k m = alter (maybe Nothing f) k m
 
 -- | Create a map from a foldable collection of key/value pairs
 fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
-fromFoldable l = pureST (do
+fromFoldable l = pureST do
   s <- SM.new
-  for_ l (\(Tuple k v) -> SM.poke s k v)
-  pure s)
+  F.foldM (\s' (Tuple k v) -> SM.poke s' k v) s l
 
 foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
 

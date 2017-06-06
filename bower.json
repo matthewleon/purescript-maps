@@ -22,6 +22,7 @@
   ],
   "dependencies": {
     "purescript-arrays": "^4.0.0",
+    "purescript-foldable-traversable": "^3.2.0",
     "purescript-functions": "^3.0.0",
     "purescript-lists": "^4.0.0",
     "purescript-st": "^3.0.0",
