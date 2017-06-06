@@ -10,8 +10,18 @@ import Data.List as L
 import Data.Map as M
 
 benchMap :: Eff (console :: CONSOLE) Unit
-benchMap = benchSize
+benchMap = do
+  log "size"
+  log "---------------"
+  benchSize
+
+  log ""
+
+  log "fromFoldable"
+  benchFromFoldable
+
   where
+
   benchSize = do
     let nats = L.range 0 999999
         natPairs = (flip Tuple) unit <$> nats
@@ -31,3 +41,11 @@ benchMap = benchSize
 
     log $ "size: big map (" <> show (M.size bigMap) <> ")"
     benchWith 10  \_ -> M.size bigMap
+
+  benchFromFoldable = do
+    let natStrs = show <$> L.range 0 999999
+        natPairs = (flip Tuple) unit <$> natStrs
+        shortPairList = L.take 10000 natPairs
+
+    log $ "fromFoldable (" <> show (L.length shortPairList) <> ")"
+    benchWith 100 \_ -> M.fromFoldable shortPairList
