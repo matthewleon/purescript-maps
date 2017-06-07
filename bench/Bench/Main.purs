@@ -9,12 +9,14 @@ import Bench.Data.StrMap (benchStrMap)
 
 main :: Eff (console :: CONSOLE) Unit
 main = do
+  {-
   log "Map"
   log "==="
   benchMap
 
   log ""
 
+  -}
 
   log "StrMap"
   log "======"
