@@ -15,6 +15,7 @@ module Data.StrMap
   , toUnfoldable
   , toAscUnfoldable
   , fromFoldable
+  , fromFoldable'
   , fromFoldableWith
   , delete
   , pop
@@ -43,7 +44,7 @@ module Data.StrMap
 
 import Prelude
 
-import Control.Monad.Eff (Eff, runPure, foreachE)
+import Control.Monad.Eff (Eff, runPure, foreachE, traverseE)
 import Control.Monad.ST as ST
 
 import Data.Array as A
@@ -207,6 +208,12 @@ fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
 fromFoldable l = pureST do
   s <- SM.new
   foreachE (A.fromFoldable l) \(Tuple k v) -> void (SM.poke s k v)
+  pure s
+
+fromFoldable' :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
+fromFoldable' l = pureST do
+  s <- SM.new
+  traverseE l \(Tuple k v) -> void (SM.poke s k v)
   pure s
 
 foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)

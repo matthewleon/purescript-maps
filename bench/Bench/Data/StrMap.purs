@@ -23,5 +23,11 @@ benchStrMap = do
     log $ "fromFoldable (" <> show (L.length shortPairList) <> ")"
     benchWith 100 \_ -> M.fromFoldable shortPairList
 
+    log $ "fromFoldable' (" <> show (L.length shortPairList) <> ")"
+    benchWith 100 \_ -> M.fromFoldable' shortPairList
+
     log $ "fromFoldable (" <> show (L.length natPairs) <> ")"
-    benchWith 10 \_ -> M.fromFoldable natPairs
+    benchWith 100 \_ -> M.fromFoldable natPairs
+
+    log $ "fromFoldable' (" <> show (L.length natPairs) <> ")"
+    benchWith 100 \_ -> M.fromFoldable' natPairs
