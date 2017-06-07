@@ -46,10 +46,10 @@ benchMap = do
   benchFromFoldable = do
     let natStrs = show <$> L.range 0 99999
         natPairs = (flip Tuple) unit <$> natStrs
-        shortPairList = L.take 10000 natPairs
+        shortPairList = L.take 1000 natPairs
 
     log $ "fromFoldable (" <> show (L.length shortPairList) <> ")"
     benchWith 100 \_ -> M.fromFoldable shortPairList
 
-    log $ "fromFoldable (" <> show (L.length natPairs) <> ")"
-    benchWith 10 \_ -> M.fromFoldable natPairs
+    --log $ "fromFoldable (" <> show (L.length natPairs) <> ")"
+    --benchWith 10 \_ -> M.fromFoldable natPairs
