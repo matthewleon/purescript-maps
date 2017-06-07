@@ -22,6 +22,7 @@ module Data.Map
   , toAscUnfoldable
   , delete
   , pop
+  , pop'
   , member
   , alter
   , update
@@ -389,6 +390,71 @@ pop k = down Nil
       Three Leaf k1 v1 Leaf _ _ Leaf -> up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
       Three left k1 v1 mid k2 v2 right -> removeMaxNode (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
 
+-- | Delete a key and its corresponding value from a map, returning the value
+-- | as well as the subsequent map.
+pop' :: forall k v. Ord k => k -> Map k v -> Maybe (Tuple v (Map k v))
+pop' k = down Nil
+  where
+  comp :: k -> k -> Ordering
+  comp = compare
+
+  down :: List (TreeContext k v) -> Map k v -> Maybe (Tuple v (Map k v))
+  down = unsafePartial \ctx m -> case m of
+    Leaf -> Nothing
+    Two left k1 v1 right ->
+      case right, comp k k1 of
+        Leaf, EQ -> Just (Tuple v1 (up ctx Leaf))
+        _   , EQ -> Just (Tuple v1 (removeMaxNode (\maxk maxv -> TwoLeft maxk maxv right) ctx left))
+        _   , LT -> down (Cons (TwoLeft k1 v1 right) ctx) left
+        _   , _  -> down (Cons (TwoRight left k1 v1) ctx) right
+    Three left k1 v1 mid k2 v2 right ->
+      let leaves =
+            case left, mid, right of
+              Leaf, Leaf, Leaf -> true
+              _   , _   , _    -> false
+      in case leaves, comp k k1, comp k k2 of
+        true, EQ, _  -> Just (Tuple v1 (fromZipper ctx (Two Leaf k2 v2 Leaf)))
+        true, _ , EQ -> Just (Tuple v2 (fromZipper ctx (Two Leaf k1 v1 Leaf)))
+        _   , EQ, _  -> Just (Tuple v1 (removeMaxNode (\maxk maxv -> ThreeLeft maxk maxv mid k2 v2 right) ctx left))
+        _   , _ , EQ -> Just (Tuple v2 (removeMaxNode (\maxk maxv -> ThreeMiddle left k1 v1 maxk maxv right) ctx mid))
+        _   , LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
+        _   , GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
+        _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
+
+  up :: List (TreeContext k v) -> Map k v -> Map k v
+  up = unsafePartial \ctxs tree ->
+    case ctxs of
+      Nil -> tree
+      Cons x ctx ->
+        case x, tree of
+          TwoLeft k1 v1 Leaf, Leaf -> fromZipper ctx (Two Leaf k1 v1 Leaf)
+          TwoRight Leaf k1 v1, Leaf -> fromZipper ctx (Two Leaf k1 v1 Leaf)
+          TwoLeft k1 v1 (Two m k2 v2 r), l -> up ctx (Three l k1 v1 m k2 v2 r)
+          TwoRight (Two l k1 v1 m) k2 v2, r -> up ctx (Three l k1 v1 m k2 v2 r)
+          TwoLeft k1 v1 (Three b k2 v2 c k3 v3 d), a -> fromZipper ctx (Two (Two a k1 v1 b) k2 v2 (Two c k3 v3 d))
+          TwoRight (Three a k1 v1 b k2 v2 c) k3 v3, d -> fromZipper ctx (Two (Two a k1 v1 b) k2 v2 (Two c k3 v3 d))
+          ThreeLeft k1 v1 Leaf k2 v2 Leaf, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
+          ThreeMiddle Leaf k1 v1 k2 v2 Leaf, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
+          ThreeRight Leaf k1 v1 Leaf k2 v2, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
+          ThreeLeft k1 v1 (Two b k2 v2 c) k3 v3 d, a -> fromZipper ctx (Two (Three a k1 v1 b k2 v2 c) k3 v3 d)
+          ThreeMiddle (Two a k1 v1 b) k2 v2 k3 v3 d, c -> fromZipper ctx (Two (Three a k1 v1 b k2 v2 c) k3 v3 d)
+          ThreeMiddle a k1 v1 k2 v2 (Two c k3 v3 d), b -> fromZipper ctx (Two a k1 v1 (Three b k2 v2 c k3 v3 d))
+          ThreeRight a k1 v1 (Two b k2 v2 c) k3 v3, d -> fromZipper ctx (Two a k1 v1 (Three b k2 v2 c k3 v3 d))
+          ThreeLeft k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4 e, a -> fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
+          ThreeMiddle (Three a k1 v1 b k2 v2 c) k3 v3 k4 v4 e, d -> fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
+          ThreeMiddle a k1 v1 k2 v2 (Three c k3 v3 d k4 v4 e), b -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
+          ThreeRight a k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4, e -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
+
+  removeMaxNode :: (k -> v -> TreeContext k v) -> List (TreeContext k v) -> Map k v -> Map k v
+  removeMaxNode ctr ctx = go Nil
+    where
+    go = unsafePartial $ \newCtx m ->
+      case m of
+        -- TODO: append here could probably be made faster
+        Two Leaf maxk maxv Leaf -> up (newCtx <> (Cons (ctr maxk maxv) ctx)) Leaf
+        Two left k' v right -> go (Cons (TwoRight left k' v) newCtx) right
+        Three Leaf k1 v1 Leaf maxk maxv Leaf -> up (Cons (TwoRight Leaf k1 v1) (newCtx <> (Cons (ctr maxk maxv) ctx))) Leaf
+        Three left k1 v1 mid k2 v2 right -> go (Cons (ThreeRight left k1 v1 mid k2 v2) newCtx) right
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. Ord k => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
