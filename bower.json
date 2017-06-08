@@ -23,12 +23,15 @@
   "dependencies": {
     "purescript-arrays": "^4.0.0",
     "purescript-functions": "^3.0.0",
-    "purescript-lists": "^4.0.0",
+    "purescript-lists": "matthewleon/purescript-lists#templist",
     "purescript-st": "^3.0.0",
     "purescript-gen": "^1.1.0"
   },
   "devDependencies": {
     "purescript-quickcheck": "^4.0.0",
     "purescript-minibench": "^1.0.0"
+  },
+  "resolutions": {
+    "purescript-lists": "templist"
   }
 }
