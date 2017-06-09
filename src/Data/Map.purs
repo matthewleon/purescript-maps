@@ -21,6 +21,7 @@ module Data.Map
   , toUnfoldable
   , toAscUnfoldable
   , delete
+  , delete'
   , pop
   , pop'
   , member
@@ -315,6 +316,10 @@ insert k v = down Nil
 -- | Delete a key and its corresponding value from a map.
 delete :: forall k v. Ord k => k -> Map k v -> Map k v
 delete k m = maybe m snd (pop k m)
+
+-- | Delete a key and its corresponding value from a map.
+delete' :: forall k v. Ord k => k -> Map k v -> Map k v
+delete' k m = maybe m snd (pop' k m)
 
 -- | Delete a key and its corresponding value from a map, returning the value
 -- | as well as the subsequent map.
