@@ -16,6 +16,7 @@ module Data.StrMap
   , toAscUnfoldable
   , fromFoldable
   , fromFoldableWith
+  , fromDissectable
   , delete
   , pop
   , member
@@ -56,6 +57,7 @@ import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unfoldable (class Unfoldable)
+import Data.Dissectable (class Dissectable, traverseP)
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: Type -> Type
@@ -207,6 +209,12 @@ fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
 fromFoldable l = pureST do
   s <- SM.new
   foreachE (A.fromFoldable l) \(Tuple k v) -> void (SM.poke s k v)
+  pure s
+
+fromDissectable :: forall f d a. Dissectable f d => f (Tuple String a) -> StrMap a
+fromDissectable l = pureST do
+  s <- SM.new
+  _ <- traverseP (\(Tuple k v) -> void (SM.poke s k v)) l
   pure s
 
 foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
