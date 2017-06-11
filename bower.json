@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "purescript-quickcheck": "^4.0.0",
-    "purescript-minibench": "^1.0.0"
+    "purescript-minibench": "matthewleon/purescript-minibench#gc"
   }
 }
