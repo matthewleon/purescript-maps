@@ -55,6 +55,7 @@ import Data.Traversable (traverse, class Traversable)
 import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
 import Data.Tuple (Tuple(Tuple), snd, uncurry)
 import Data.Unfoldable (class Unfoldable, unfoldr)
+import Data.UnfoldableWithIndex (class UnfoldableWithIndex, unfoldrWithIndex)
 import Partial.Unsafe (unsafePartial)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
@@ -107,6 +108,13 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
   foldlWithIndex f z m = foldl (uncurry <<< (flip f)) z $ asList $ toUnfoldable m
   foldrWithIndex f z m = foldr (uncurry f) z $ asList $ toUnfoldable m
   foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
+
+instance unfoldableWithIndexMap :: Ord k => UnfoldableWithIndex k (Map k) where
+  unfoldrWithIndex f b = go b empty
+    where
+    go source acc = case f source of
+      Nothing -> acc
+      Just (Tuple (Tuple k v) source') -> go source' (insert k v acc)
 
 asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
 asList = id

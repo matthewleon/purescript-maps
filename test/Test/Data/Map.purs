@@ -16,6 +16,7 @@ import Data.Map.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
+import Data.UnfoldableWithIndex as U
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
@@ -333,3 +334,17 @@ mapTests = do
        <> ", mmin: " <> show mmin
        <> ", mmax: " <> show mmax
        <> ", key: " <> show key
+
+  log "UnfoldWithIndex none"
+  quickCheck' 1 $ M.empty == (U.none :: M.Map Unit Unit)
+
+  log "UnfoldWithIndex singleton"
+  quickCheck' 1 $ M.singleton "foo" 1 == U.singleton "foo" 1
+
+  log "UnfoldWithIndex"
+  let unfoldF n =
+        if n < 2
+          then Just (Tuple (Tuple n "foo") (n + 1))
+          else Nothing
+  quickCheck' 1 $ M.fromFoldable [(Tuple 0 "foo"), (Tuple 1 "foo")]
+    == U.unfoldrWithIndex unfoldF 0
